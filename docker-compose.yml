@@ -1,0 +1,45 @@
+services:
+  # Qdrant vector database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # Streamlit application
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data:ro
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+    networks:
+      - rag-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  qdrant_storage:
+    driver: local
+
+networks:
+  rag-network:
+    driver: bridge
