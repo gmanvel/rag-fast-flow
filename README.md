@@ -115,8 +115,6 @@ You need to have Ollama installed and running with the required models:
 
 ### Qdrant Data Population
 
-**Good News!** The application now includes a built-in feature to populate Qdrant directly from the UI. You don't need to run any notebook cells manually.
-
 The application will automatically detect if Qdrant is empty and show a "Populate Qdrant" button in the sidebar. When you click it, the app will:
 
 1. Process the Fast Flow documentation from `data/fast_flow_extracted.json`
@@ -200,13 +198,6 @@ The application sidebar shows:
 
 4. **Click "🗑️ Clear"** to reset and ask another question
 
-### Repopulating the Database
-
-If you need to repopulate Qdrant (e.g., after updates to the source data):
-1. The app currently recreates the collection each time you click "Populate Qdrant"
-2. Any existing data will be replaced
-3. The process takes 2-5 minutes to complete
-
 ## Configuration
 
 The application can be configured via environment variables in [docker-compose.yml](docker-compose.yml):
@@ -219,17 +210,6 @@ environment:
   - QDRANT_PORT=6333             # Qdrant port (default: 6333)
   - OLLAMA_BASE_URL=http://host.docker.internal:11434  # Ollama API URL
 ```
-
-### Modifying Configuration
-
-To change settings:
-
-1. Edit [docker-compose.yml](docker-compose.yml)
-2. Restart services:
-   ```bash
-   docker-compose down
-   docker-compose up -d
-   ```
 
 ## Development
 
@@ -270,111 +250,3 @@ rag-fast-flow/
     ├── fast_flow_extracted.json
     └── sections_with_embeddings.json
 ```
-
-## Troubleshooting
-
-### Qdrant Connection Failed
-
-**Symptom**: Sidebar shows "❌ Qdrant connection failed"
-
-**Solutions**:
-- Ensure Qdrant container is running: `docker-compose ps`
-- Check Qdrant logs: `docker-compose logs qdrant`
-- Verify port 6333 is not in use by another service
-
-### Collection Not Found or Empty
-
-**Symptom**: "⚠️ Qdrant connected but collection not found" or "⚠️ Qdrant collection is empty"
-
-**Solution**:
-- Click the "🚀 Populate Qdrant" button in the sidebar
-- Wait 2-5 minutes for the population process to complete
-- The page will automatically refresh when done
-
-**If population fails**:
-- Ensure `data/fast_flow_extracted.json` exists in your project directory
-- Check Ollama is running and accessible
-- Review Streamlit logs: `docker-compose logs streamlit`
-
-### Ollama Connection Error
-
-**Symptom**: "Error communicating with LLM"
-
-**Solutions**:
-- Verify Ollama is running: `curl http://localhost:11434/api/tags`
-- Ensure models are pulled: `ollama list`
-- Check Docker can reach host: Test with `docker run --rm curlimages/curl curl http://host.docker.internal:11434/api/tags`
-
-### Slow Response Times
-
-**Causes**:
-- First query after startup takes longer (model loading)
-- Large context retrieved from Qdrant
-- Host machine resource constraints
-
-**Solutions**:
-- Wait for first query to complete (subsequent queries will be faster)
-- Reduce `top_k` parameter in [rag_service.py](rag_service.py:20) (default: 3)
-- Ensure sufficient RAM for Ollama models
-
-### Database Population Takes Too Long
-
-**Symptom**: "Populate Qdrant" process takes more than 10 minutes
-
-**Causes**:
-- Slow embedding generation (depends on CPU/GPU)
-- Network issues connecting to Ollama
-- Large number of sections being processed
-
-**Solutions**:
-- Ensure Ollama is running locally (not over network)
-- Check system resources: `docker stats`
-- Monitor progress in Streamlit logs: `docker-compose logs -f streamlit`
-- If it hangs, restart: `docker-compose restart streamlit` and try again
-
-**Note**: Normal processing time is 2-5 minutes for ~300-500 chunks
-
-### Docker Build Fails
-
-**Symptom**: `docker-compose up` fails during build
-
-**Solutions**:
-- Ensure you have internet connectivity (downloads Python packages)
-- Clear Docker cache: `docker-compose build --no-cache`
-- Check Docker has sufficient disk space
-
-## Stopping the Application
-
-To stop all services:
-
-```bash
-docker-compose down
-```
-
-To stop and remove volumes (deletes Qdrant data):
-
-```bash
-docker-compose down -v
-```
-
-## Future Enhancements
-
-Potential improvements for this application:
-
-- [x] ~~Add data population UI/script within the application~~ ✅ Completed!
-- [ ] Support for multiple document collections
-- [ ] Adjustable retrieval parameters (top_k, similarity threshold) via UI
-- [ ] Progress bar for database population showing chunk processing
-- [ ] Response quality metrics and scoring
-- [ ] Export comparison results to PDF/Markdown
-- [ ] Support for different LLM models (configurable in UI)
-- [ ] Chat history and conversation context
-- [ ] Upload custom documents for RAG processing
-
-## License
-
-This project is for educational and demonstration purposes.
-
-## Contributing
-
-Feel free to submit issues or pull requests for improvements!
